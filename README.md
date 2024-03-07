@@ -45,6 +45,30 @@ quit
 
 credit: https://dev.to/techschoolguru/install-use-docker-postgres-table-plus-to-create-db-schema-44he
 
+
+# DB Migration
+## golang migrate libary
+1. golang migrate # https://github.com/golang-migrate/migrate
+2. CLI usage # https://github.com/golang-migrate/migrate/tree/master/cmd/migrate
+3. `brew install golang-migrate`
+check version `migrate -version`
+help `migrate -help`
+
+4. add new folder in project `mkdir -p db/migration` for store migration files
+check folder `ls -l`
+
+5. create new migration file `migrate -help` for see create command
+`migrate create -ext sql -dir db/migration -seq init_schema`
+
+6. copy pg sql form dbdiagram.io paste file up
+7. revert change made by the up script on down
+`down file
+  DROP TABLE IF EXISTS entries;
+  DROP TABLE IF EXISTS transfers;
+  DROP TABLE IF EXISTS accounts;
+`
+
+
 # Compare ORM 
 1. GORM - Run slowly on hitg load 
 2. SQLX - Quite fast & easy to use, Failure won't occur until runtime

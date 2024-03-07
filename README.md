@@ -62,11 +62,11 @@ check folder `ls -l`
 
 6. copy pg sql form dbdiagram.io paste file up
 7. revert change made by the up script on down
-`down file
+``` file down
   DROP TABLE IF EXISTS entries;
   DROP TABLE IF EXISTS transfers;
   DROP TABLE IF EXISTS accounts;
-`
+```
 
 
 # Compare ORM 

@@ -113,6 +113,11 @@ migrate create -ext sql -dir db/migration -seq init_schema
   DROP TABLE IF EXISTS accounts;
 ```
 
+8. migration schema file `migrate -help` see detail
+```bash
+migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" -verbose up
+```
+
 ## Create Makefile 
 make run command to easy for setup the project on local machine for development
 ```makefile
@@ -133,16 +138,62 @@ migratedown:
 
 .PHONY: postgres createdb dropdb migrateup migratedown
 ```
-8. migration file `migrate -help` see detail
-```bash
-migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" -verbose up
-```
-
-
-
-
 
 ## Compare ORM 
 1. GORM - Run slowly on hitg load 
 2. SQLX - Quite fast & easy to use, Failure won't occur until runtime
 3. SQLC - Very fast & easy
+
+
+## Installation SQLC
+https://sqlc.dev/ 
+https://github.com/sqlc-dev/sqlc?tab=readme-ov-file
+
+using command
+```bash
+brew install sqlc
+
+sqlc version #check version
+sqlc help #help
+
+sqlc init #create file sqlc.yaml file
+
+sqlc generate #to generate file 
+
+```
+
+add configuration to sqlc.yaml
+```yaml
+version: "2"
+sql: 
+  - schema: "db/migration/"
+    queries: "db/query/"
+    engine: "postgresql"
+    gen:
+      go:
+        package: db
+        out: "db/sqlc"
+        emit_json_tags: true
+        emit_prepared_queries: false
+        emit_interface: false
+        emit_exact_table_names: false
+```
+
+create query sqlc CRUD Example INSERT
+```SQL
+-- name: CreateAccount :one
+INSERT INTO accounts (
+  owner,
+  balance,
+  currency
+) VALUES (
+  $1, $2, $3
+) RETURNING *;
+```
+then use command `sqlc generate` 
+
+## GO INIT
+```BASH
+ go mod init github.com/techschool/simplebank
+ go mod tidy
+```

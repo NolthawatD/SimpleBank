@@ -197,3 +197,11 @@ then use command `sqlc generate`
  go mod init github.com/techschool/simplebank
  go mod tidy
 ```
+
+# Unit Test 
+1. create new file in sqlc `main_test.go` and `account_test.go`
+2. and installation library 
+- `lb pq` https://github.com/lib/pq 
+- `testify` https://github.com/stretchr/testify
+3. in main_test.go use lib pq must add _ (underscore on git for don't remove)
+4. make util for generate name 

@@ -205,3 +205,13 @@ then use command `sqlc generate`
 - `testify` https://github.com/stretchr/testify
 3. in main_test.go use lib pq must add _ (underscore on git for don't remove)
 4. make util for generate name 
+
+# Setup Github Action
+https://github.com/NolthawatD/SimpleBank/actions/new
+
+select action 
+click `Set up this workflow` for golanc (Continous Intergration)
+https://github.com/NolthawatD/SimpleBank/new/main?filename=.github%2Fworkflows%2Fgo.yml&workflow_template=ci%2Fgo
+
+mkdir -p .github/workflows
+touch .github/workflows/ci.yml 

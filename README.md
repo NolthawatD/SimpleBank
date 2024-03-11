@@ -1,236 +1,196 @@
-# Design ER-Diagram 
-## https://dbdiagram.io/d/SimpleBank-65e888637570557c71371af2
+[![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/golang-migrate/migrate/ci.yaml?branch=master)](https://github.com/golang-migrate/migrate/actions/workflows/ci.yaml?query=branch%3Amaster)
+[![GoDoc](https://pkg.go.dev/badge/github.com/golang-migrate/migrate)](https://pkg.go.dev/github.com/golang-migrate/migrate/v4)
+[![Coverage Status](https://img.shields.io/coveralls/github/golang-migrate/migrate/master.svg)](https://coveralls.io/github/golang-migrate/migrate?branch=master)
+[![packagecloud.io](https://img.shields.io/badge/deb-packagecloud.io-844fec.svg)](https://packagecloud.io/golang-migrate/migrate?filter=debs)
+[![Docker Pulls](https://img.shields.io/docker/pulls/migrate/migrate.svg)](https://hub.docker.com/r/migrate/migrate/)
+![Supported Go Versions](https://img.shields.io/badge/Go-1.20%2C%201.21-lightgrey.svg)
+[![GitHub Release](https://img.shields.io/github/release/golang-migrate/migrate.svg)](https://github.com/golang-migrate/migrate/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/golang-migrate/migrate/v4)](https://goreportcard.com/report/github.com/golang-migrate/migrate/v4)
 
-# Docker
-## Setup Postgresql
-1. docker ps  =  list container run
-2. docker images  =  list images 
-3. docker pull  @  https://hub.docker.com/
-4. such as pull postgresql 
-```zsh
-docker pull <name>:<tag>
-```
-```zsh
-docker pull postgresql:15-alpine
-```
-5. start a container 
+# migrate
 
-```zsh
-  docker run --name <container_name> -p <host_port:container_port> -e <environment_variable> -d <image>:<tag>
-```
+__Database migrations written in Go. Use as [CLI](#cli-usage) or import as [library](#use-in-your-go-project).__
 
-```zsh
-  docker run --name postgres15 -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:15-alpine
-```
+* Migrate reads migrations from [sources](#migration-sources)
+   and applies them in correct order to a [database](#databases).
+* Drivers are "dumb", migrate glues everything together and makes sure the logic is bulletproof.
+   (Keeps the drivers lightweight, too.)
+* Database drivers don't assume things or try to correct user input. When in doubt, fail.
 
-6. or use docker compose (up to me >,<)
-```dockerfile
-  version: "3.9"
-  
-  services:
-    postgres:
-      image: postgres:15-alpine
-      container_name: amado_local_db
-      # restart: always
-      environment:
-        POSTGRES_USER: amado_user
-        POSTGRES_PASSWORD: dev@1Amado
-        POSTGRES_DB: amado_local
-      volumes:
-        - ./data:/var/lib/postgresql/data
-      ports:
-        - "5438:5432"
-```
-7. run command in container
-```zsh
-docker exec -it <container_name_or_id> <command> [args]
-```
-```zsh
-docker exec -it postgres15 psql -U root
-```
+Forked from [mattes/migrate](https://github.com/mattes/migrate)
 
-simple query
-```select now();```
+## Databases
 
-quit `\q`
+Database drivers run migrations. [Add a new database?](database/driver.go)
 
-8. logs container  `docker logs <container_name_or_id>`
-9. stop container `docker stop <container_name_or_id>`
-10. regardless of their running status `docker ps -a`
-11. start again `docker start <container_name_or_id>`
-12. shell to use all standard linux commands 
-```zsh
-docker exec -it postgres15 /bin/sh
+* [PostgreSQL](database/postgres)
+* [PGX v4](database/pgx)
+* [PGX v5](database/pgx/v5)
+* [Redshift](database/redshift)
+* [Ql](database/ql)
+* [Cassandra / ScyllaDB](database/cassandra)
+* [SQLite](database/sqlite)
+* [SQLite3](database/sqlite3) ([todo #165](https://github.com/mattes/migrate/issues/165))
+* [SQLCipher](database/sqlcipher)
+* [MySQL / MariaDB](database/mysql)
+* [Neo4j](database/neo4j)
+* [MongoDB](database/mongodb)
+* [CrateDB](database/crate) ([todo #170](https://github.com/mattes/migrate/issues/170))
+* [Shell](database/shell) ([todo #171](https://github.com/mattes/migrate/issues/171))
+* [Google Cloud Spanner](database/spanner)
+* [CockroachDB](database/cockroachdb)
+* [YugabyteDB](database/yugabytedb)
+* [ClickHouse](database/clickhouse)
+* [Firebird](database/firebird)
+* [MS SQL Server](database/sqlserver)
+* [RQLite](database/rqlite)
 
-pwd
+### Database URLs
 
-ls -l
+Database connection strings are specified via URLs. The URL format is driver dependent but generally has the form: `dbdriver://username:password@host:port/dbname?param1=true&param2=false`
 
-createdb --username=root --owner=root simple_bank
+Any [reserved URL characters](https://en.wikipedia.org/wiki/Percent-encoding#Percent-encoding_reserved_characters) need to be escaped. Note, the `%` character also [needs to be escaped](https://en.wikipedia.org/wiki/Percent-encoding#Percent-encoding_the_percent_character)
 
-psql simple_bank  --> *show simple_bank=#  \q  for exit  
+Explicitly, the following characters need to be escaped:
+`!`, `#`, `$`, `%`, `&`, `'`, `(`, `)`, `*`, `+`, `,`, `/`, `:`, `;`, `=`, `?`, `@`, `[`, `]`
 
-dropdb simple_bank
-
-exit 
-
-or 
-
-docker exec -it postgres15 createdb --username=root --owner=root simple_bank
-docker exec -it postgres15 psql -U root simple_bank
-docker exec -it postgres15 dropdb simple_bank
-```
-
-13. remove container `docker ps -a`
-14. show history use command `history | grep "docker run"` other topic besides docker run
-
-
-credit: https://dev.to/techschoolguru/install-use-docker-postgres-table-plus-to-create-db-schema-44he
-
-
-# DB Migration
-## golang migrate libary
-1. golang migrate # https://github.com/golang-migrate/migrate
-2. CLI usage # https://github.com/golang-migrate/migrate/tree/master/cmd/migrate
-```zsh
-brew install golang-migrate
-```
-check version `migrate -version`
-
-4. add new folder in project `mkdir -p db/migration` for store migration files
-check folder `ls -l`
-
-5. create new migration file `migrate -help` for see create command
-``` zsh
-migrate create -ext sql -dir db/migration -seq init_schema
-```
-
-6. copy pg sql form dbdiagram.io paste file up
-7. revert change made by the up script on down
-``` sql
-  DROP TABLE IF EXISTS entries;
-  DROP TABLE IF EXISTS transfers;
-  DROP TABLE IF EXISTS accounts;
-```
-
-8. migration schema file `migrate -help` see detail
-```bash
-migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" -verbose up
-```
-
-## Create Makefile 
-make run command to easy for setup the project on local machine for development
-```makefile
-postgres:
-	docker run --name postgres15 -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:15-alpine
-
-createdb:
-	docker exec -it postgres15 createdb --username=root --owner=root simple_bank
-
-dropdb:
-	docker exec -it postgres15 dropdb simple_bank
-
-migrateup:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" -verbose up
-
-migratedown:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" -verbose down
-
-.PHONY: postgres createdb dropdb migrateup migratedown
-```
-
-## Compare ORM 
-1. GORM - Run slowly on hitg load 
-2. SQLX - Quite fast & easy to use, Failure won't occur until runtime
-3. SQLC - Very fast & easy
-
-
-## Installation SQLC
-https://sqlc.dev/ 
-https://github.com/sqlc-dev/sqlc?tab=readme-ov-file
-
-using command
-```bash
-brew install sqlc
-
-sqlc version #check version
-sqlc help #help
-
-sqlc init #create file sqlc.yaml file
-
-sqlc generate #to generate file 
-
-```
-
-add configuration to sqlc.yaml
-```yaml
-version: "2"
-sql: 
-  - schema: "db/migration/"
-    queries: "db/query/"
-    engine: "postgresql"
-    gen:
-      go:
-        package: db
-        out: "db/sqlc"
-        emit_json_tags: true
-        emit_prepared_queries: false
-        emit_interface: false
-        emit_exact_table_names: false
-```
-
-create query sqlc CRUD Example INSERT
-```SQL
--- name: CreateAccount :one
-INSERT INTO accounts (
-  owner,
-  balance,
-  currency
-) VALUES (
-  $1, $2, $3
-) RETURNING *;
-```
-then use command `sqlc generate` 
-
-## GO INIT
-```BASH
- go mod init github.com/techschool/simplebank
- go mod tidy
-```
-
-# Unit Test 
-1. create new file in sqlc `main_test.go` and `account_test.go`
-2. and installation library 
-- `lb pq` https://github.com/lib/pq 
-- `testify` https://github.com/stretchr/testify
-3. in main_test.go use lib pq must add _ (underscore on git for don't remove)
-4. make util for generate name 
-
-# Setup Github Action
-https://github.com/NolthawatD/SimpleBank/actions/new
-
-## Select action 
-click `Set up this workflow` for golanc (Continous Intergration)
-https://github.com/NolthawatD/SimpleBank/new/main?filename=.github%2Fworkflows%2Fgo.yml&workflow_template=ci%2Fgo
+It's easiest to always run the URL parts of your DB connection URL (e.g. username, password, etc) through an URL encoder. See the example Python snippets below:
 
 ```bash
-mkdir -p .github/workflows
-touch .github/workflows/ci.yml 
+$ python3 -c 'import urllib.parse; print(urllib.parse.quote(input("String to encode: "), ""))'
+String to encode: FAKEpassword!#$%&'()*+,/:;=?@[]
+FAKEpassword%21%23%24%25%26%27%28%29%2A%2B%2C%2F%3A%3B%3D%3F%40%5B%5D
+$ python2 -c 'import urllib; print urllib.quote(raw_input("String to encode: "), "")'
+String to encode: FAKEpassword!#$%&'()*+,/:;=?@[]
+FAKEpassword%21%23%24%25%26%27%28%29%2A%2B%2C%2F%3A%3B%3D%3F%40%5B%5D
+$
 ```
 
-### searching : github action postgres 
-https://docs.github.com/en/actions/using-containerized-services/creating-postgresql-service-containers
+## Migration Sources
 
-add service postgres for runing ci action
+Source drivers read migrations from local or remote sources. [Add a new source?](source/driver.go)
 
+* [Filesystem](source/file) - read from filesystem
+* [io/fs](source/iofs) - read from a Go [io/fs](https://pkg.go.dev/io/fs#FS)
+* [Go-Bindata](source/go_bindata) - read from embedded binary data ([jteeuwen/go-bindata](https://github.com/jteeuwen/go-bindata))
+* [pkger](source/pkger) - read from embedded binary data ([markbates/pkger](https://github.com/markbates/pkger))
+* [GitHub](source/github) - read from remote GitHub repositories
+* [GitHub Enterprise](source/github_ee) - read from remote GitHub Enterprise repositories
+* [Bitbucket](source/bitbucket) - read from remote Bitbucket repositories
+* [Gitlab](source/gitlab) - read from remote Gitlab repositories
+* [AWS S3](source/aws_s3) - read from Amazon Web Services S3
+* [Google Cloud Storage](source/google_cloud_storage) - read from Google Cloud Platform Storage
 
-### searching : golang migrate > go to CLI document 
-use curl command for download a pre-build binary of migrate CLI
-https://github.com/golang-migrate/migrate/tree/master/cmd/migrate
+## CLI usage
+
+* Simple wrapper around this library.
+* Handles ctrl+c (SIGINT) gracefully.
+* No config search paths, no config files, no magic ENV var injections.
+
+__[CLI Documentation](cmd/migrate)__
+
+### Basic usage
 
 ```bash
-$ curl -L https://github.com/golang-migrate/migrate/releases/download/$version/migrate.$os-$arch.tar.gz | tar xvz
+$ migrate -source file://path/to/migrations -database postgres://localhost:5432/database up 2
 ```
-click realease for copy link asset linux for run ubuntu : `migrate.linux-amd64.tar.gz` > https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz and replace it
 
-have to move `migrate.linux-amd64` that binary to the /use/bin folder
+### Docker usage
+
+```bash
+$ docker run -v {{ migration dir }}:/migrations --network host migrate/migrate
+    -path=/migrations/ -database postgres://localhost:5432/database up 2
+```
+
+## Use in your Go project
+
+* API is stable and frozen for this release (v3 & v4).
+* Uses [Go modules](https://golang.org/cmd/go/#hdr-Modules__module_versions__and_more) to manage dependencies.
+* To help prevent database corruptions, it supports graceful stops via `GracefulStop chan bool`.
+* Bring your own logger.
+* Uses `io.Reader` streams internally for low memory overhead.
+* Thread-safe and no goroutine leaks.
+
+__[Go Documentation](https://pkg.go.dev/github.com/golang-migrate/migrate/v4)__
+
+```go
+import (
+    "github.com/golang-migrate/migrate/v4"
+    _ "github.com/golang-migrate/migrate/v4/database/postgres"
+    _ "github.com/golang-migrate/migrate/v4/source/github"
+)
+
+func main() {
+    m, err := migrate.New(
+        "github://mattes:personal-access-token@mattes/migrate_test",
+        "postgres://localhost:5432/database?sslmode=enable")
+    m.Steps(2)
+}
+```
+
+Want to use an existing database client?
+
+```go
+import (
+    "database/sql"
+    _ "github.com/lib/pq"
+    "github.com/golang-migrate/migrate/v4"
+    "github.com/golang-migrate/migrate/v4/database/postgres"
+    _ "github.com/golang-migrate/migrate/v4/source/file"
+)
+
+func main() {
+    db, err := sql.Open("postgres", "postgres://localhost:5432/database?sslmode=enable")
+    driver, err := postgres.WithInstance(db, &postgres.Config{})
+    m, err := migrate.NewWithDatabaseInstance(
+        "file:///migrations",
+        "postgres", driver)
+    m.Up() // or m.Step(2) if you want to explicitly set the number of migrations to run
+}
+```
+
+## Getting started
+
+Go to [getting started](GETTING_STARTED.md)
+
+## Tutorials
+
+* [CockroachDB](database/cockroachdb/TUTORIAL.md)
+* [PostgreSQL](database/postgres/TUTORIAL.md)
+
+(more tutorials to come)
+
+## Migration files
+
+Each migration has an up and down migration. [Why?](FAQ.md#why-two-separate-files-up-and-down-for-a-migration)
+
+```bash
+1481574547_create_users_table.up.sql
+1481574547_create_users_table.down.sql
+```
+
+[Best practices: How to write migrations.](MIGRATIONS.md)
+
+## Coming from another db migration tool?
+
+Check out [migradaptor](https://github.com/musinit/migradaptor/).
+*Note: migradaptor is not affliated or supported by this project*
+
+## Versions
+
+Version | Supported? | Import | Notes
+--------|------------|--------|------
+**master** | :white_check_mark: | `import "github.com/golang-migrate/migrate/v4"` | New features and bug fixes arrive here first |
+**v4** | :white_check_mark: | `import "github.com/golang-migrate/migrate/v4"` | Used for stable releases |
+**v3** | :x: | `import "github.com/golang-migrate/migrate"` (with package manager) or `import "gopkg.in/golang-migrate/migrate.v3"` (not recommended) | **DO NOT USE** - No longer supported |
+
+## Development and Contributing
+
+Yes, please! [`Makefile`](Makefile) is your friend,
+read the [development guide](CONTRIBUTING.md).
+
+Also have a look at the [FAQ](FAQ.md).
+
+---
+
+Looking for alternatives? [https://awesome-go.com/#database](https://awesome-go.com/#database).

@@ -215,3 +215,9 @@ https://github.com/NolthawatD/SimpleBank/new/main?filename=.github%2Fworkflows%2
 
 mkdir -p .github/workflows
 touch .github/workflows/ci.yml 
+
+seaching : github action postgres 
+https://docs.github.com/en/actions/using-containerized-services/creating-postgresql-service-containers
+
+add service postgres for runing ci action
+

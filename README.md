@@ -209,15 +209,28 @@ then use command `sqlc generate`
 # Setup Github Action
 https://github.com/NolthawatD/SimpleBank/actions/new
 
-select action 
+## Select action 
 click `Set up this workflow` for golanc (Continous Intergration)
 https://github.com/NolthawatD/SimpleBank/new/main?filename=.github%2Fworkflows%2Fgo.yml&workflow_template=ci%2Fgo
 
+```bash
 mkdir -p .github/workflows
 touch .github/workflows/ci.yml 
+```
 
-seaching : github action postgres 
+### searching : github action postgres 
 https://docs.github.com/en/actions/using-containerized-services/creating-postgresql-service-containers
 
 add service postgres for runing ci action
 
+
+### searching : golang migrate > go to CLI document 
+use curl command for download a pre-build binary of migrate CLI
+https://github.com/golang-migrate/migrate/tree/master/cmd/migrate
+
+```bash
+$ curl -L https://github.com/golang-migrate/migrate/releases/download/$version/migrate.$os-$arch.tar.gz | tar xvz
+```
+click realease for copy link asset linux for run ubuntu : `migrate.linux-amd64.tar.gz` > https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz and replace it
+
+have to move `migrate.linux-amd64` that binary to the /use/bin folder
